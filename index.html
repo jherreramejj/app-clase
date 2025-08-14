@@ -89,7 +89,7 @@
     <div class="box opt-accion" data-accion="X8">X8</div>
     <div class="box opt-accion" data-accion="XP">XP</div>
     <div class="box opt-accion" data-accion="VP">VP</div>
-    <div class="stat" id="actionHint">Selecciona llamada, jugador, zona y valor. Luego haz clic en una acción para registrar.</div>
+    <div class="stat" id="actionHint">Primero toca un Valor (esto reinicia), luego elige Llamada, Jugador y Zona. Finalmente pulsa una Acción para registrar.</div>
   </section>
 
   <!-- Zona final -->
@@ -187,12 +187,27 @@
   addPlayerBtn.addEventListener("click", addPlayer);
   playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
 
-  // Zona / Valor
+  // Zona
   document.querySelectorAll(".opt-zona").forEach(el=>{
-    el.addEventListener("click", ()=>{ state.selected.zona=el.dataset.zona; setActive(".opt-zona","zona",state.selected.zona); refreshBadges(); });
+    el.addEventListener("click", ()=>{
+      state.selected.zona=el.dataset.zona;
+      setActive(".opt-zona","zona",state.selected.zona);
+      refreshBadges();
+    });
   });
+
+  // ---- Reinicio al presionar VALOR ----
   document.querySelectorAll(".opt-valor").forEach(el=>{
-    el.addEventListener("click", ()=>{ state.selected.valor=el.dataset.valor; setActive(".opt-valor","valor",state.selected.valor); refreshBadges(); });
+    el.addEventListener("click", ()=>{
+      // Limpiar todo lo activo y reiniciar selecciones
+      document.querySelectorAll(".active").forEach(elm => elm.classList.remove("active"));
+      state.selected = { llamada:null, jugador:null, zona:null, valor:null };
+
+      // Marcar solo el valor elegido
+      state.selected.valor = el.dataset.valor;
+      setActive(".opt-valor","valor",state.selected.valor);
+      refreshBadges();
+    });
   });
 
   // Registrar con clic en Acción (requiere todos los campos)
@@ -206,7 +221,7 @@
       if(falta.length){
         const msg = "Falta: " + falta.join(", ");
         document.getElementById("actionHint").textContent = msg;
-        setTimeout(()=>{ document.getElementById("actionHint").textContent = "Selecciona llamada, jugador, zona y valor. Luego haz clic en una acción para registrar."; }, 1500);
+        setTimeout(()=>{ document.getElementById("actionHint").textContent = "Primero toca un Valor (esto reinicia), luego elige Llamada, Jugador y Zona. Finalmente pulsa una Acción para registrar."; }, 1500);
         return;
       }
       const ev = {
@@ -221,10 +236,7 @@
       refreshBadges();
       updateStackedChart();
 
-      // --- NUEVO: limpiar botones activos y resetear selección ---
-      document.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
-      state.selected = { llamada:null, jugador:null, zona:null, valor:null };
-      refreshBadges();
+      // NOTA: ya NO limpiamos aquí; el reinicio ocurre al presionar un botón de Valor.
     });
   });
 
@@ -242,7 +254,7 @@
   }
   document.getElementById("exportCsvBox").addEventListener("click", exportCSV);
 
-  // Reiniciar
+  // Reiniciar manual (botón)
   document.getElementById("resetBtn").addEventListener("click", ()=>{
     if(!confirm("¿Vaciar jugadores y eventos?")) return;
     state.selected = { llamada:null, jugador:null, zona:null, valor:null };
