@@ -7,8 +7,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --box-w: 150px;     /* más pequeño */
-    --box-h: 40px;      /* más pequeño */
+    --box-w: 150px;     /* tamaño pequeño */
+    --box-h: 40px;
     --gap: 10px;
     --ink: #111; --paper:#fff; --bg:#fafafa; --accent:#2d6cdf;
   }
@@ -220,6 +220,11 @@
       state.events.push(ev);
       refreshBadges();
       updateStackedChart();
+
+      // --- NUEVO: limpiar botones activos y resetear selección ---
+      document.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
+      state.selected = { llamada:null, jugador:null, zona:null, valor:null };
+      refreshBadges();
     });
   });
 
