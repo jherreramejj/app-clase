@@ -7,37 +7,37 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --box-w: 150px;    /* tamaño pequeño */
-    --box-h: 40px;
-    --gap: 10px;
+    --box-w: 110px;    /* tamaño más pequeño */
+    --box-h: 32px;
+    --gap: 8px;
     --ink:#111; --paper:#fff; --bg:#fafafa; --accent:#2d6cdf;
   }
   *{box-sizing:border-box}
-  body{margin:0; padding:14px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:#222}
-  h1{margin:0 0 10px 0; font-size:18px}
-  .grid{display:grid; gap:18px; align-items:start; grid-template-columns: repeat(5, var(--box-w)) 1fr;}
+  body{margin:0; padding:10px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:#222}
+  h1{margin:0 0 8px 0; font-size:16px}
+  .grid{display:grid; gap:12px; align-items:start; grid-template-columns: repeat(5, var(--box-w)) 1fr;}
   @media (max-width:1000px){ .grid{ grid-template-columns: repeat(3, var(--box-w)); } }
   @media (max-width:700px){ .grid{ grid-template-columns: repeat(2, var(--box-w)); } }
-  .title{font-size:16px; margin-bottom:6px; text-align:center}
+  .title{font-size:14px; margin-bottom:4px; text-align:center}
   .box{
     width:var(--box-w); height:var(--box-h);
     border:2px solid var(--ink); background:var(--paper);
     display:flex; align-items:center; justify-content:center;
-    margin-bottom:var(--gap); cursor:pointer; user-select:none; font-size:14px;
+    margin-bottom:var(--gap); cursor:pointer; user-select:none; font-size:12px;
     transition:background .08s, transform .06s, outline .06s, opacity .12s;
   }
   .box:hover{background:#f7f7f7}
   .box:active{transform:translateY(1px)}
   .box.active{outline:3px solid var(--accent); outline-offset:-3px; background:#eef4ff}
   .box.disabled{opacity:.5; pointer-events:none; filter:grayscale(.3)}
-  .box-input{cursor:text; padding:0 8px; justify-content:flex-start}
-  .box-input input{width:100%; height:100%; border:none; outline:none; background:transparent; font-size:14px}
+  .box-input{cursor:text; padding:0 6px; justify-content:flex-start}
+  .box-input input{width:100%; height:100%; border:none; outline:none; background:transparent; font-size:12px}
   .box-add{font-weight:700}
-  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px}
-  .btn{border:2px solid var(--ink); background:#fff; padding:5px 8px; font-size:12px; cursor:pointer; font-weight:600}
-  .stat{font-size:11px; color:#666}
-  .panel{border:2px solid var(--ink); background:#fff; padding:10px; margin-top:14px}
-  .hint{font-size:12px; color:#666; text-align:center; min-height:16px}
+  .row{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px}
+  .btn{border:2px solid var(--ink); background:#fff; padding:3px 6px; font-size:11px; cursor:pointer; font-weight:600}
+  .stat{font-size:10px; color:#666}
+  .panel{border:2px solid var(--ink); background:#fff; padding:8px; margin-top:10px}
+  .hint{font-size:10px; color:#666; text-align:center; min-height:14px}
   .step{font-weight:700}
 </style>
 </head>
@@ -84,7 +84,7 @@
     <div class="box opt-accion" data-accion="X5">X5</div>
     <div class="box opt-accion" data-accion="V5">V5</div>
     <div class="box opt-accion" data-accion="X7">X7</div>
-    <div class="box opt-accion" data-accion="XC">XC</div>
+    <div class="box opt-accion" data-accion="PP">PP</div>
     <div class="box opt-accion" data-accion="X1">X1</div>
     <div class="box opt-accion" data-accion="X2">X2</div>
     <div class="box opt-accion" data-accion="XD">XD</div>
@@ -103,9 +103,10 @@
     <div class="box opt-zona" data-zona="3">3</div>
     <div class="box opt-zona" data-zona="4">4</div>
     <div class="box opt-zona" data-zona="5">5</div>
+    <div class="box opt-zona" data-zona="6">6</div>
   </section>
 
-  <!-- Valor (al seleccionar se REGISTRA y se REINICIA) -->
+  <!-- Valor -->
   <section>
     <div class="title">Valor</div>
     <div class="box opt-valor" data-valor="#">#</div>
@@ -114,7 +115,7 @@
     <div class="box opt-valor" data-valor="/">/</div>
     <div class="box opt-valor" data-valor="-">-</div>
     <div class="box opt-valor" data-valor="=">=</div>
-    <div class="hint" id="actionHint">Sigue el orden: Llamada → Jugador → Acción → Zona → <b>Valor</b> (registra).</div>
+    <div class="hint" id="actionHint">Sigue el orden: Llamada → Jugador → Acción → Zona → <b>Valor</b></div>
   </section>
 
   <!-- Export -->
@@ -124,232 +125,119 @@
   </section>
 </div>
 
-<!-- Gráfico Llamada ↔ Acción -->
+<!-- Panel gráfico -->
 <div class="panel">
   <div class="title" style="text-align:left">Frecuencias por Llamada (barras apiladas por Acción)</div>
   <canvas id="stackedChart" height="160"></canvas>
 </div>
 
 <script>
-  // ---- Config pasos (izq→der) ----
-  const LLAMADAS = ["K7","KC","K1","K2","KD","KE"];
-  const ACCIONES = ["X5","V5","X7","XC","X1","X2","XD","V6","X6","X8","XP","VP"];
-  const STEPS = [
-    { key: "llamada", selector: ".opt-llamada", dataKey: "llamada", label: "Llamada" },
-    { key: "jugador", selector: ".opt-jugador", dataKey: "jugador", label: "Jugador" },
-    { key: "accion",  selector: ".opt-accion",  dataKey: "accion",  label: "Acción"  },
-    { key: "zona",    selector: ".opt-zona",    dataKey: "zona",    label: "Zona"    },
-    { key: "valor",   selector: ".opt-valor",   dataKey: "valor",   label: "Valor"   },
-  ];
-
-  const state = {
-    selected: { llamada:null, jugador:null, accion:null, zona:null, valor:null },
-    players: [],
-    events: [],
-    progress: 0  // índice del próximo paso requerido (0=llamada)
-  };
-
-  // ---- Utilidades ----
-  function $(q){ return document.querySelector(q); }
-  function $all(q){ return Array.from(document.querySelectorAll(q)); }
-
-  function setStepLabel(){
-    const stepLabel = document.getElementById("stepLabel");
-    stepLabel.textContent = STEPS[state.progress]?.label ?? "Terminado";
+const LLAMADAS = ["K7","KC","K1","K2","KD","KE"];
+const ACCIONES = ["X5","V5","X7","PP","X1","X2","XD","V6","X6","X8","XP","VP"];
+const STEPS = [
+  { key: "llamada", selector: ".opt-llamada", dataKey: "llamada", label: "Llamada" },
+  { key: "jugador", selector: ".opt-jugador", dataKey: "jugador", label: "Jugador" },
+  { key: "accion",  selector: ".opt-accion",  dataKey: "accion",  label: "Acción"  },
+  { key: "zona",    selector: ".opt-zona",    dataKey: "zona",    label: "Zona"    },
+  { key: "valor",   selector: ".opt-valor",   dataKey: "valor",   label: "Valor"   },
+];
+const state = { selected: { llamada:null, jugador:null, accion:null, zona:null, valor:null }, players: [], events: [], progress: 0 };
+function $(q){ return document.querySelector(q); }
+function $all(q){ return Array.from(document.querySelectorAll(q)); }
+function setStepLabel(){ $("#stepLabel").textContent = STEPS[state.progress]?.label ?? "Terminado"; }
+function refreshBadges(){
+  selLlamada.textContent = state.selected.llamada || "—";
+  selJugador.textContent = state.selected.jugador || "—";
+  selAccion.textContent  = state.selected.accion  || "—";
+  selZona.textContent    = state.selected.zona    || "—";
+  selValor.textContent   = state.selected.valor   || "—";
+  countEvents.textContent= state.events.length;
+  setStepLabel();
+}
+function clearAfter(index){
+  for(let i=index+1;i<STEPS.length;i++){
+    const k = STEPS[i].key;
+    state.selected[k] = null;
+    $all(STEPS[i].selector).forEach(el=>el.classList.remove("active"));
   }
-
-  function refreshBadges(){
-    selLlamada.textContent = state.selected.llamada || "—";
-    selJugador.textContent = state.selected.jugador || "—";
-    selAccion.textContent  = state.selected.accion  || "—";
-    selZona.textContent    = state.selected.zona    || "—";
-    selValor.textContent   = state.selected.valor   || "—";
-    countEvents.textContent= state.events.length;
-    setStepLabel();
-  }
-
-  function clearAfter(index){
-    for(let i=index+1;i<STEPS.length;i++){
-      const k = STEPS[i].key;
-      state.selected[k] = null;
-      // limpiar activos del grupo
-      $all(STEPS[i].selector).forEach(el=>el.classList.remove("active"));
-    }
-  }
-
-  function enforceDisabled(){
-    // Deshabilitar todos los grupos a la derecha del progreso; habilitar los <= progreso
-    STEPS.forEach((s, i)=>{
-      const disable = i > state.progress;
-      $all(s.selector).forEach(el=>{
-        el.classList.toggle("disabled", disable);
-      });
-    });
-    // Jugadores (se crean dinámicamente)
-    // Ya se controla con la misma clase .opt-jugador aplicada a los cuadros renderizados
-  }
-
-  function handleSelect(stepKey, el){
-    const idx = STEPS.findIndex(s=>s.key===stepKey);
-    const dataKey = STEPS[idx].dataKey;
-    const value = el.dataset[dataKey];
-    // Activar en el grupo
-    $all(STEPS[idx].selector).forEach(n=>n.classList.remove("active"));
-    el.classList.add("active");
-    // Guardar selección y limpiar a la derecha
-    state.selected[stepKey] = value;
-    clearAfter(idx);
-    // Avanzar al siguiente paso (o registrar si es "valor")
-    if(stepKey === "valor"){
-      registerEvent();   // registra y resetea todo
-    }else{
-      state.progress = Math.min(idx+1, STEPS.length-1);
-      refreshBadges();
-      enforceDisabled();
-    }
-  }
-
-  function resetFlow(){
-    // Limpia selecciones y UI, vuelve al paso 0 (Llamada)
-    Object.keys(state.selected).forEach(k=>state.selected[k]=null);
-    STEPS.forEach(s=>$all(s.selector).forEach(el=>el.classList.remove("active")));
-    state.progress = 0;
-    refreshBadges();
-    enforceDisabled();
-  }
-
-  // ---- Registro al elegir VALOR ----
-  function registerEvent(){
-    // Requiere que todo esté seleccionado (por diseño "valor" sólo se habilita si lo anterior está listo)
-    const ev = {
-      ts: new Date().toISOString(),
-      llamada: state.selected.llamada,
-      jugador: state.selected.jugador,
-      accion:  state.selected.accion,
-      zona_final: state.selected.zona,
-      valor:   state.selected.valor
-    };
-    state.events.push(ev);
-    refreshBadges();
-    updateStackedChart();
-    // Reinicio total para el siguiente registro
-    resetFlow();
-  }
-
-  // ---- Inicialización de handlers por grupo ----
-  // Llamada
-  $all(".opt-llamada").forEach(el=>{
-    el.addEventListener("click", ()=>handleSelect("llamada", el));
+}
+function enforceDisabled(){
+  STEPS.forEach((s, i)=>{
+    const disable = i > state.progress;
+    $all(s.selector).forEach(el=>el.classList.toggle("disabled", disable));
   });
-
-  // Acción
-  $all(".opt-accion").forEach(el=>{
-    el.addEventListener("click", ()=>handleSelect("accion", el));
-  });
-
-  // Zona
-  $all(".opt-zona").forEach(el=>{
-    el.addEventListener("click", ()=>handleSelect("zona", el));
-  });
-
-  // Valor (registra)
-  $all(".opt-valor").forEach(el=>{
-    el.addEventListener("click", ()=>handleSelect("valor", el));
-  });
-
-  // ---- Jugadores ----
-  const playerInput  = document.getElementById("playerInput");
-  const addPlayerBtn = document.getElementById("addPlayerBtn");
-  const playersList  = document.getElementById("playersList");
-
-  function renderPlayers(){
-    playersList.innerHTML = "";
-    state.players.forEach(name=>{
-      const box = document.createElement("div");
-      box.className = "box opt-jugador";
-      box.dataset.jugador = name;
-      box.textContent = name;
-      if(state.selected.jugador===name) box.classList.add("active");
-      // Control de disabled según progreso
-      if(state.progress < 1) box.classList.add("disabled"); else box.classList.remove("disabled");
-      box.addEventListener("click", ()=>handleSelect("jugador", box));
-      playersList.appendChild(box);
-    });
+}
+function handleSelect(stepKey, el){
+  const idx = STEPS.findIndex(s=>s.key===stepKey);
+  const value = el.dataset[STEPS[idx].dataKey];
+  $all(STEPS[idx].selector).forEach(n=>n.classList.remove("active"));
+  el.classList.add("active");
+  state.selected[stepKey] = value;
+  clearAfter(idx);
+  if(stepKey === "valor"){ registerEvent(); }else{
+    state.progress = Math.min(idx+1, STEPS.length-1);
+    refreshBadges(); enforceDisabled();
   }
-
-  function addPlayer(){
-    const name = playerInput.value.trim();
-    if(!name || state.players.includes(name)) return;
-    state.players.push(name);
-    playerInput.value="";
-    renderPlayers();
-    // Si estamos justo en el paso "jugador" y no hay selección, auto-selecciona este para agilizar
-    if(state.progress === 1 && !state.selected.jugador){
-      const el = playersList.lastElementChild;
-      handleSelect("jugador", el);
-    }
-  }
-  addPlayerBtn.addEventListener("click", addPlayer);
-  playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
-
-  // ---- Export CSV ----
-  function exportCSV(){
-    if(state.events.length===0){ alert("No hay eventos."); return; }
-    const header = ["timestamp","llamada","jugador","accion","zona_final","valor"];
-    const rows = state.events.map(e => [e.ts, e.llamada, e.jugador, e.accion, e.zona_final, e.valor]);
-    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href=url; a.download=`volley_${Date.now()}.csv`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-  document.getElementById("exportCsvBox").addEventListener("click", exportCSV);
-
-  // ---- Reinicio Manual ----
-  document.getElementById("resetBtn").addEventListener("click", ()=>{
-    if(!confirm("¿Vaciar jugadores y eventos?")) return;
-    state.players = [];
-    state.events = [];
-    resetFlow();
-    renderPlayers();
-    updateStackedChart();
+}
+function resetFlow(){
+  Object.keys(state.selected).forEach(k=>state.selected[k]=null);
+  STEPS.forEach(s=>$all(s.selector).forEach(el=>el.classList.remove("active")));
+  state.progress = 0; refreshBadges(); enforceDisabled();
+}
+function registerEvent(){
+  const ev = { ts: new Date().toISOString(), llamada: state.selected.llamada, jugador: state.selected.jugador, accion: state.selected.accion, zona_final: state.selected.zona, valor: state.selected.valor };
+  state.events.push(ev);
+  refreshBadges(); updateStackedChart(); resetFlow();
+}
+$all(".opt-llamada").forEach(el=>el.addEventListener("click", ()=>handleSelect("llamada", el)));
+$all(".opt-accion").forEach(el=>el.addEventListener("click", ()=>handleSelect("accion", el)));
+$all(".opt-zona").forEach(el=>el.addEventListener("click", ()=>handleSelect("zona", el)));
+$all(".opt-valor").forEach(el=>el.addEventListener("click", ()=>handleSelect("valor", el)));
+const playerInput=$("#playerInput"), addPlayerBtn=$("#addPlayerBtn"), playersList=$("#playersList");
+function renderPlayers(){
+  playersList.innerHTML = "";
+  state.players.forEach(name=>{
+    const box = document.createElement("div");
+    box.className = "box opt-jugador"; box.dataset.jugador = name; box.textContent = name;
+    if(state.selected.jugador===name) box.classList.add("active");
+    if(state.progress < 1) box.classList.add("disabled"); else box.classList.remove("disabled");
+    box.addEventListener("click", ()=>handleSelect("jugador", box));
+    playersList.appendChild(box);
   });
-
-  // ---- Gráfico Llamada × Acción (barras apiladas) ----
-  const ctx = document.getElementById("stackedChart").getContext("2d");
-  const stacked = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: LLAMADAS,
-      datasets: ACCIONES.map(a => ({ label: a, data: LLAMADAS.map(()=>0) }))
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "top" } },
-      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }
-    }
-  });
-
-  function updateStackedChart(){
-    const counts = {};
-    ACCIONES.forEach(a => counts[a] = LLAMADAS.reduce((o,l)=>(o[l]=0,o),{}));
-    for (const e of state.events){
-      if(counts[e.accion] && counts[e.accion][e.llamada] !== undefined){
-        counts[e.accion][e.llamada] += 1;
-      }
-    }
-    stacked.data.datasets.forEach((ds, idx)=>{
-      const action = ACCIONES[idx];
-      ds.data = LLAMADAS.map(l => counts[action][l]);
-    });
-    stacked.update();
+}
+function addPlayer(){
+  const name = playerInput.value.trim();
+  if(!name || state.players.includes(name)) return;
+  state.players.push(name); playerInput.value=""; renderPlayers();
+  if(state.progress === 1 && !state.selected.jugador){
+    const el = playersList.lastElementChild; handleSelect("jugador", el);
   }
-
-  // ---- Init ----
-  resetFlow();       // fija progreso=0 y bloqueos
-  renderPlayers();   // render base (sin jugadores al inicio)
-  updateStackedChart();
+}
+addPlayerBtn.addEventListener("click", addPlayer);
+playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
+function exportCSV(){
+  if(state.events.length===0){ alert("No hay eventos."); return; }
+  const header = ["timestamp","llamada","jugador","accion","zona_final","valor"];
+  const rows = state.events.map(e => [e.ts, e.llamada, e.jugador, e.accion, e.zona_final, e.valor]);
+  const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"}), url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href=url; a.download=`volley_${Date.now()}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+$("#exportCsvBox").addEventListener("click", exportCSV);
+$("#resetBtn").addEventListener("click", ()=>{ if(!confirm("¿Vaciar jugadores y eventos?")) return; state.players=[]; state.events=[]; resetFlow(); renderPlayers(); updateStackedChart(); });
+const ctx=$("#stackedChart").getContext("2d");
+const stacked = new Chart(ctx, {
+  type: "bar",
+  data: { labels: LLAMADAS, datasets: ACCIONES.map(a => ({ label: a, data: LLAMADAS.map(()=>0) })) },
+  options: { responsive: true, plugins: { legend: { position: "top" } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } }
+});
+function updateStackedChart(){
+  const counts = {}; ACCIONES.forEach(a => counts[a] = LLAMADAS.reduce((o,l)=>(o[l]=0,o),{}));
+  for (const e of state.events){ if(counts[e.accion] && counts[e.accion][e.llamada] !== undefined){ counts[e.accion][e.llamada] += 1; } }
+  stacked.data.datasets.forEach((ds, idx)=>{ const action = ACCIONES[idx]; ds.data = LLAMADAS.map(l => counts[action][l]); });
+  stacked.update();
+}
+resetFlow(); renderPlayers(); updateStackedChart();
 </script>
 </body>
 </html>
