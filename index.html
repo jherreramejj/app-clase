@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --box-w: 110px;    /* tamaño más pequeño */
+    --box-w: 110px;    /* tamaño compacto */
     --box-h: 32px;
     --gap: 8px;
     --ink:#111; --paper:#fff; --bg:#fafafa; --accent:#2d6cdf;
@@ -15,9 +15,14 @@
   *{box-sizing:border-box}
   body{margin:0; padding:10px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:#222}
   h1{margin:0 0 8px 0; font-size:16px}
-  .grid{display:grid; gap:12px; align-items:start; grid-template-columns: repeat(5, var(--box-w)) 1fr;}
+  /* Layout principal: 5 columnas fijas + 1 flex para export/gráfico */
+  .grid{
+    display:grid; gap:12px; align-items:start;
+    grid-template-columns: repeat(5, var(--box-w)) 1fr;
+  }
   @media (max-width:1000px){ .grid{ grid-template-columns: repeat(3, var(--box-w)); } }
   @media (max-width:700px){ .grid{ grid-template-columns: repeat(2, var(--box-w)); } }
+
   .title{font-size:14px; margin-bottom:4px; text-align:center}
   .box{
     width:var(--box-w); height:var(--box-h);
@@ -33,12 +38,25 @@
   .box-input{cursor:text; padding:0 6px; justify-content:flex-start}
   .box-input input{width:100%; height:100%; border:none; outline:none; background:transparent; font-size:12px}
   .box-add{font-weight:700}
+  .box--fluid{ width:100%; } /* para que ocupe el ancho de su celda en grids internos */
+
   .row{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px}
   .btn{border:2px solid var(--ink); background:#fff; padding:3px 6px; font-size:11px; cursor:pointer; font-weight:600}
   .stat{font-size:10px; color:#666}
   .panel{border:2px solid var(--ink); background:#fff; padding:8px; margin-top:10px}
   .hint{font-size:10px; color:#666; text-align:center; min-height:14px}
   .step{font-weight:700}
+
+  /* Acción: cuadrícula de 2 columnas + que ocupe dos columnas del layout en escritorio */
+  .section--action { }
+  @media (min-width: 1001px){
+    .section--action { grid-column: span 2; } /* ocupa dos columnas del layout principal */
+  }
+  .action-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr; /* 2 columnas internas */
+    gap: var(--gap);
+  }
 </style>
 </head>
 <body>
@@ -78,21 +96,23 @@
     <div id="playersList"></div>
   </section>
 
-  <!-- Acción -->
-  <section>
+  <!-- Acción (dos columnas internas) -->
+  <section class="section--action">
     <div class="title">Acción</div>
-    <div class="box opt-accion" data-accion="X5">X5</div>
-    <div class="box opt-accion" data-accion="V5">V5</div>
-    <div class="box opt-accion" data-accion="X7">X7</div>
-    <div class="box opt-accion" data-accion="PP">PP</div>
-    <div class="box opt-accion" data-accion="X1">X1</div>
-    <div class="box opt-accion" data-accion="X2">X2</div>
-    <div class="box opt-accion" data-accion="XD">XD</div>
-    <div class="box opt-accion" data-accion="V6">V6</div>
-    <div class="box opt-accion" data-accion="X6">X6</div>
-    <div class="box opt-accion" data-accion="X8">X8</div>
-    <div class="box opt-accion" data-accion="XP">XP</div>
-    <div class="box opt-accion" data-accion="VP">VP</div>
+    <div class="action-grid">
+      <div class="box box--fluid opt-accion" data-accion="X5">X5</div>
+      <div class="box box--fluid opt-accion" data-accion="V5">V5</div>
+      <div class="box box--fluid opt-accion" data-accion="X7">X7</div>
+      <div class="box box--fluid opt-accion" data-accion="PP">PP</div>
+      <div class="box box--fluid opt-accion" data-accion="X1">X1</div>
+      <div class="box box--fluid opt-accion" data-accion="X2">X2</div>
+      <div class="box box--fluid opt-accion" data-accion="XD">XD</div>
+      <div class="box box--fluid opt-accion" data-accion="V6">V6</div>
+      <div class="box box--fluid opt-accion" data-accion="X6">X6</div>
+      <div class="box box--fluid opt-accion" data-accion="X8">X8</div>
+      <div class="box box--fluid opt-accion" data-accion="XP">XP</div>
+      <div class="box box--fluid opt-accion" data-accion="VP">VP</div>
+    </div>
   </section>
 
   <!-- Zona final -->
@@ -106,7 +126,7 @@
     <div class="box opt-zona" data-zona="6">6</div>
   </section>
 
-  <!-- Valor -->
+  <!-- Valor (al seleccionar se REGISTRA y se REINICIA) -->
   <section>
     <div class="title">Valor</div>
     <div class="box opt-valor" data-valor="#">#</div>
@@ -115,7 +135,7 @@
     <div class="box opt-valor" data-valor="/">/</div>
     <div class="box opt-valor" data-valor="-">-</div>
     <div class="box opt-valor" data-valor="=">=</div>
-    <div class="hint" id="actionHint">Sigue el orden: Llamada → Jugador → Acción → Zona → <b>Valor</b></div>
+    <div class="hint" id="actionHint">Orden: Llamada → Jugador → Acción → Zona → <b>Valor</b> (registra)</div>
   </section>
 
   <!-- Export -->
@@ -125,7 +145,7 @@
   </section>
 </div>
 
-<!-- Panel gráfico -->
+<!-- Gráfico Llamada ↔ Acción -->
 <div class="panel">
   <div class="title" style="text-align:left">Frecuencias por Llamada (barras apiladas por Acción)</div>
   <canvas id="stackedChart" height="160"></canvas>
@@ -142,8 +162,10 @@ const STEPS = [
   { key: "valor",   selector: ".opt-valor",   dataKey: "valor",   label: "Valor"   },
 ];
 const state = { selected: { llamada:null, jugador:null, accion:null, zona:null, valor:null }, players: [], events: [], progress: 0 };
+
 function $(q){ return document.querySelector(q); }
 function $all(q){ return Array.from(document.querySelectorAll(q)); }
+
 function setStepLabel(){ $("#stepLabel").textContent = STEPS[state.progress]?.label ?? "Terminado"; }
 function refreshBadges(){
   selLlamada.textContent = state.selected.llamada || "—";
@@ -185,14 +207,26 @@ function resetFlow(){
   state.progress = 0; refreshBadges(); enforceDisabled();
 }
 function registerEvent(){
-  const ev = { ts: new Date().toISOString(), llamada: state.selected.llamada, jugador: state.selected.jugador, accion: state.selected.accion, zona_final: state.selected.zona, valor: state.selected.valor };
+  const ev = {
+    ts: new Date().toISOString(),
+    llamada: state.selected.llamada,
+    jugador: state.selected.jugador,
+    accion:  state.selected.accion,
+    zona_final: state.selected.zona,
+    valor: state.selected.valor
+  };
   state.events.push(ev);
   refreshBadges(); updateStackedChart(); resetFlow();
 }
+
+/* Handlers por grupo */
 $all(".opt-llamada").forEach(el=>el.addEventListener("click", ()=>handleSelect("llamada", el)));
+/* Acción en 2 columnas: sigue funcionando igual */
 $all(".opt-accion").forEach(el=>el.addEventListener("click", ()=>handleSelect("accion", el)));
 $all(".opt-zona").forEach(el=>el.addEventListener("click", ()=>handleSelect("zona", el)));
 $all(".opt-valor").forEach(el=>el.addEventListener("click", ()=>handleSelect("valor", el)));
+
+/* Jugadores dinámicos */
 const playerInput=$("#playerInput"), addPlayerBtn=$("#addPlayerBtn"), playersList=$("#playersList");
 function renderPlayers(){
   playersList.innerHTML = "";
@@ -215,6 +249,8 @@ function addPlayer(){
 }
 addPlayerBtn.addEventListener("click", addPlayer);
 playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
+
+/* Export CSV */
 function exportCSV(){
   if(state.events.length===0){ alert("No hay eventos."); return; }
   const header = ["timestamp","llamada","jugador","accion","zona_final","valor"];
@@ -224,12 +260,23 @@ function exportCSV(){
   const a = document.createElement("a"); a.href=url; a.download=`volley_${Date.now()}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 $("#exportCsvBox").addEventListener("click", exportCSV);
-$("#resetBtn").addEventListener("click", ()=>{ if(!confirm("¿Vaciar jugadores y eventos?")) return; state.players=[]; state.events=[]; resetFlow(); renderPlayers(); updateStackedChart(); });
+
+/* Reset manual */
+$("#resetBtn").addEventListener("click", ()=>{
+  if(!confirm("¿Vaciar jugadores y eventos?")) return;
+  state.players=[]; state.events=[]; resetFlow(); renderPlayers(); updateStackedChart();
+});
+
+/* Gráfico Llamada×Acción (apilado) */
 const ctx=$("#stackedChart").getContext("2d");
 const stacked = new Chart(ctx, {
   type: "bar",
   data: { labels: LLAMADAS, datasets: ACCIONES.map(a => ({ label: a, data: LLAMADAS.map(()=>0) })) },
-  options: { responsive: true, plugins: { legend: { position: "top" } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } }
+  options: {
+    responsive: true,
+    plugins: { legend: { position: "top" } },
+    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }
+  }
 });
 function updateStackedChart(){
   const counts = {}; ACCIONES.forEach(a => counts[a] = LLAMADAS.reduce((o,l)=>(o[l]=0,o),{}));
@@ -237,6 +284,8 @@ function updateStackedChart(){
   stacked.data.datasets.forEach((ds, idx)=>{ const action = ACCIONES[idx]; ds.data = LLAMADAS.map(l => counts[action][l]); });
   stacked.update();
 }
+
+/* Init */
 resetFlow(); renderPlayers(); updateStackedChart();
 </script>
 </body>
