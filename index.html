@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --box-w: 150px;     /* tamaño pequeño */
+    --box-w: 150px;
     --box-h: 40px;
     --gap: 10px;
     --ink: #111; --paper:#fff; --bg:#fafafa; --accent:#2d6cdf;
@@ -89,7 +89,7 @@
     <div class="box opt-accion" data-accion="X8">X8</div>
     <div class="box opt-accion" data-accion="XP">XP</div>
     <div class="box opt-accion" data-accion="VP">VP</div>
-    <div class="stat" id="actionHint">Primero toca un Valor (esto reinicia), luego elige Llamada, Jugador y Zona. Finalmente pulsa una Acción para registrar.</div>
+    <div class="stat" id="actionHint">Selecciona Llamada, Jugador, Zona y Valor, luego pulsa una Acción para registrar.</div>
   </section>
 
   <!-- Zona final -->
@@ -120,23 +120,17 @@
   </section>
 </div>
 
-<!-- Gráfico Llamada ↔ Acción -->
+<!-- Gráfico -->
 <div class="panel">
   <div class="title" style="text-align:left">Frecuencias por Llamada (barras apiladas por Acción)</div>
   <canvas id="stackedChart" height="160"></canvas>
 </div>
 
 <script>
-  // ---- Estado ----
   const LLAMADAS = ["K7","KC","K1","K2","KD","KE"];
   const ACCIONES = ["X5","V5","X7","XC","X1","X2","XD","V6","X6","X8","XP","VP"];
-  const state = {
-    selected: { llamada:null, jugador:null, zona:null, valor:null },
-    players: [],
-    events: [] // {ts, llamada, jugador, accion, zona_final, valor}
-  };
+  const state = { selected: { llamada:null, jugador:null, zona:null, valor:null }, players: [], events: [] };
 
-  // ---- Utilidades UI ----
   function setActive(selector, key, value){
     document.querySelectorAll(selector).forEach(el=>{
       if(el.dataset[key] === value) el.classList.add("active");
@@ -144,14 +138,13 @@
     });
   }
   function refreshBadges(){
-    document.getElementById("selLlamada").textContent = state.selected.llamada || "—";
-    document.getElementById("selJugador").textContent = state.selected.jugador || "—";
-    document.getElementById("selZona").textContent    = state.selected.zona || "—";
-    document.getElementById("selValor").textContent   = state.selected.valor || "—";
-    document.getElementById("countEvents").textContent= state.events.length;
+    selLlamada.textContent = state.selected.llamada || "—";
+    selJugador.textContent = state.selected.jugador || "—";
+    selZona.textContent    = state.selected.zona || "—";
+    selValor.textContent   = state.selected.valor || "—";
+    countEvents.textContent= state.events.length;
   }
 
-  // ---- Selecciones ----
   document.querySelectorAll(".opt-llamada").forEach(el=>{
     el.addEventListener("click", ()=>{
       state.selected.llamada = el.dataset.llamada;
@@ -160,7 +153,6 @@
     });
   });
 
-  // Jugadores
   const playerInput  = document.getElementById("playerInput");
   const addPlayerBtn = document.getElementById("addPlayerBtn");
   const playersList  = document.getElementById("playersList");
@@ -177,8 +169,7 @@
   }
   function addPlayer(){
     const name = playerInput.value.trim();
-    if(!name) return;
-    if(state.players.includes(name)) return;
+    if(!name || state.players.includes(name)) return;
     state.players.push(name);
     if(!state.selected.jugador) state.selected.jugador = name;
     playerInput.value="";
@@ -187,7 +178,6 @@
   addPlayerBtn.addEventListener("click", addPlayer);
   playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
 
-  // Zona
   document.querySelectorAll(".opt-zona").forEach(el=>{
     el.addEventListener("click", ()=>{
       state.selected.zona=el.dataset.zona;
@@ -196,21 +186,15 @@
     });
   });
 
-  // ---- Reinicio al presionar VALOR ----
+  // Valor (sin reinicio)
   document.querySelectorAll(".opt-valor").forEach(el=>{
     el.addEventListener("click", ()=>{
-      // Limpiar todo lo activo y reiniciar selecciones
-      document.querySelectorAll(".active").forEach(elm => elm.classList.remove("active"));
-      state.selected = { llamada:null, jugador:null, zona:null, valor:null };
-
-      // Marcar solo el valor elegido
       state.selected.valor = el.dataset.valor;
       setActive(".opt-valor","valor",state.selected.valor);
       refreshBadges();
     });
   });
 
-  // Registrar con clic en Acción (requiere todos los campos)
   document.querySelectorAll(".opt-accion").forEach(el=>{
     el.addEventListener("click", ()=>{
       const falta = [];
@@ -219,43 +203,37 @@
       if(!state.selected.zona)    falta.push("zona");
       if(!state.selected.valor)   falta.push("valor");
       if(falta.length){
-        const msg = "Falta: " + falta.join(", ");
-        document.getElementById("actionHint").textContent = msg;
-        setTimeout(()=>{ document.getElementById("actionHint").textContent = "Primero toca un Valor (esto reinicia), luego elige Llamada, Jugador y Zona. Finalmente pulsa una Acción para registrar."; }, 1500);
+        actionHint.textContent = "Falta: " + falta.join(", ");
+        setTimeout(()=>{ actionHint.textContent = "Selecciona Llamada, Jugador, Zona y Valor, luego pulsa una Acción para registrar."; }, 1500);
         return;
       }
-      const ev = {
+      state.events.push({
         ts: new Date().toISOString(),
         llamada: state.selected.llamada,
         jugador: state.selected.jugador,
         accion: el.dataset.accion,
         zona_final: state.selected.zona,
         valor: state.selected.valor
-      };
-      state.events.push(ev);
+      });
       refreshBadges();
       updateStackedChart();
-
-      // NOTA: ya NO limpiamos aquí; el reinicio ocurre al presionar un botón de Valor.
     });
   });
 
-  // Export CSV
   function exportCSV(){
-    if(state.events.length===0){ alert("No hay eventos para exportar."); return; }
+    if(state.events.length===0){ alert("No hay eventos."); return; }
     const header = ["timestamp","llamada","jugador","accion","zona_final","valor"];
     const rows = state.events.map(e => [e.ts, e.llamada, e.jugador, e.accion, e.zona_final, e.valor]);
     const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href=url; a.download=`volley_events_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.csv`;
+    a.href=url; a.download=`volley_${Date.now()}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
   document.getElementById("exportCsvBox").addEventListener("click", exportCSV);
 
-  // Reiniciar manual (botón)
-  document.getElementById("resetBtn").addEventListener("click", ()=>{
+  resetBtn.addEventListener("click", ()=>{
     if(!confirm("¿Vaciar jugadores y eventos?")) return;
     state.selected = { llamada:null, jugador:null, zona:null, valor:null };
     state.players = []; state.events = [];
@@ -263,7 +241,6 @@
     renderPlayers(); refreshBadges(); updateStackedChart();
   });
 
-  // ---- GRÁFICO: Llamada x Acción (barras apiladas) ----
   const ctx = document.getElementById("stackedChart").getContext("2d");
   const stacked = new Chart(ctx, {
     type: "bar",
@@ -274,15 +251,11 @@
     options: {
       responsive: true,
       plugins: { legend: { position: "top" } },
-      scales: {
-        x: { stacked: true },
-        y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
-      }
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } }
     }
   });
 
   function updateStackedChart(){
-    // matriz conteos [accion][llamada]
     const counts = {};
     ACCIONES.forEach(a => counts[a] = LLAMADAS.reduce((o,l)=>(o[l]=0,o),{}));
     for (const e of state.events){
@@ -297,7 +270,6 @@
     stacked.update();
   }
 
-  // Init
   renderPlayers(); refreshBadges(); updateStackedChart();
 </script>
 </body>
