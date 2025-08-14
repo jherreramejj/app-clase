@@ -3,376 +3,285 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Volei · Registro</title>
+<title>Volley Stats · Llamada↔Acción</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --box-w: 230px;     /* ancho base de los cuadros */
-    --box-h: 56px;      /* alto base de los cuadros */
-    --gap: 14px;        /* separación vertical entre cuadros */
-    --ink: #111;        /* color borde/linea tipo maqueta */
-    --paper: #fff;
-    --bg: #fafafa;
-    --muted: #666;
-    --accent: #2d6cdf;
+    --box-w: 150px;     /* más pequeño */
+    --box-h: 40px;      /* más pequeño */
+    --gap: 10px;
+    --ink: #111; --paper:#fff; --bg:#fafafa; --accent:#2d6cdf;
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
-    background: var(--bg);
-    color:#222;
-  }
-
-  /* Barra superior fija (acciones rápidas) */
-  .topbar{
-    position: sticky; top:0; z-index:10;
-    background: var(--paper);
-    border-bottom: 2px solid var(--ink);
-    padding: 10px 16px;
-  }
-  .topbar .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-  .stat{font-size:11px; color:var(--muted)} /* reducido */
-  .btn{
-    border:2px solid var(--ink); background: var(--paper);
-    padding:6px 10px; cursor:pointer; font-weight:600; font-size:13px; /* reducido */
-  }
-
-  main{padding: 18px 16px 28px 16px; max-width: 1200px; margin: 0 auto;}
-
-  /* Secciones con título */
-  .section{margin-top:18px}
-  .section h2{
-    font-size:18px; /* reducido */
-    font-weight:700; margin:0 0 10px 0;
-    padding-bottom:6px; border-bottom:2px solid var(--ink);
-  }
-
-  /* Layout columnas responsivo */
-  .grid{
-    display:grid;
-    grid-template-columns: var(--box-w) var(--box-w) 1fr;
-    gap: 28px;
-    align-items:start;
-  }
-  @media (max-width: 980px){
-    .grid{ grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 680px){
-    .grid{ grid-template-columns: 1fr; }
-  }
-
-  /* ---- CUADROS DEFINIDOS (tipo maqueta) ---- */
+  body{margin:0; padding:14px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+       background:var(--bg); color:#222}
+  h1{margin:0 0 10px 0; font-size:18px}
+  .grid{display:grid; gap:18px; align-items:start; grid-template-columns: repeat(5, var(--box-w)) 1fr;}
+  @media (max-width:1000px){ .grid{ grid-template-columns: repeat(3, var(--box-w)); } }
+  @media (max-width:700px){ .grid{ grid-template-columns: repeat(2, var(--box-w)); } }
+  .title{font-size:16px; margin-bottom:6px; text-align:center}
   .box{
-    width: var(--box-w); height: var(--box-h);
-    border: 2px solid var(--ink);
-    background: var(--paper);
+    width:var(--box-w); height:var(--box-h);
+    border:2px solid var(--ink); background:var(--paper);
     display:flex; align-items:center; justify-content:center;
-    margin-bottom: var(--gap);
-    cursor:pointer; user-select:none; font-size:16px; /* reducido */
-    letter-spacing:.3px;
-    transition: background .08s ease, transform .06s ease, outline .06s ease;
+    margin-bottom:var(--gap); cursor:pointer; user-select:none; font-size:14px;
+    transition:background .08s, transform .06s, outline .06s;
   }
-  .box:hover{ background:#f7f7f7 }
-  .box:active{ transform: translateY(1px) }
-  .box.active{ outline:3px solid var(--accent); outline-offset:-3px; background:#eef4ff }
-
-  /* Cuadro de entrada + botón añadir */
-  .add-wrap{ display:flex; gap:10px; align-items:center; margin-bottom: var(--gap); }
-  .box-input{
-    width: var(--box-w); height: var(--box-h);
-    border:2px solid var(--ink); background: var(--paper);
-    display:flex; align-items:center; padding:0 12px;
-  }
-  .box-input input{
-    width:100%; height:100%; border:none; outline:none; font-size:16px; /* reducido */
-    background:transparent;
-  }
-  .box-add{
-    width: 120px; height: var(--box-h);
-    display:flex; align-items:center; justify-content:center;
-    border: 2px solid var(--ink); background: var(--paper);
-    cursor:pointer; font-weight:700; font-size:14px; /* reducido */
-  }
-  .box-add:hover{ background:#f7f7f7 }
-  .box-add:active{ transform: translateY(1px) }
-
-  /* Paneles */
-  .panel{ background: var(--paper); border:2px solid var(--ink); padding:14px; }
-
-  /* Tabla genérica */
-  table{ width:100%; border-collapse:collapse; font-size:12px } /* reducido */
-  th,td{ border-top:1px solid #ddd; padding:8px 8px; text-align:left }
-  th{ background:#f6f6f6 }
-
-  /* Frecuencias por jugador: tarjetas */
-  .freq-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
-  .freq-card{ border:2px solid var(--ink); background:var(--paper); }
-  .freq-card header{ padding:8px 10px; border-bottom:2px solid var(--ink); font-weight:700; display:flex; justify-content:space-between; align-items:center}
-  .badge{ font-size:11px; color:var(--muted) } /* reducido */
-  .freq-card table{ font-size:11px } /* reducido */
-
-  /* Export cuadro en columna derecha */
-  .right-col .box{ width: 240px }
-
-  /* Filtro */
-  .text{ padding:6px 10px; border:1px solid #bbb; background:#fff; font-size:13px }
+  .box:hover{background:#f7f7f7}
+  .box:active{transform:translateY(1px)}
+  .box.active{outline:3px solid var(--accent); outline-offset:-3px; background:#eef4ff}
+  .box-input{cursor:text; padding:0 8px; justify-content:flex-start}
+  .box-input input{width:100%; height:100%; border:none; outline:none; background:transparent; font-size:14px}
+  .box-add{font-weight:700}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px}
+  .btn{border:2px solid var(--ink); background:#fff; padding:5px 8px; font-size:12px; cursor:pointer; font-weight:600}
+  .stat{font-size:11px; color:#666}
+  .panel{border:2px solid var(--ink); background:#fff; padding:10px; margin-top:14px}
 </style>
 </head>
 <body>
 
-  <!-- Barra fija -->
-  <div class="topbar">
-    <div class="row">
-      <div class="stat">Jugador activo: <b id="currentPlayer">—</b></div>
-      <div class="stat">Eventos totales: <b id="totalEvents">0</b></div>
-      <button id="exportCsvBtn" class="btn">Exportar CSV</button>
-      <button id="resetBtn" class="btn">Reiniciar</button>
+<h1>Volley Stats · Registro (Llamada→Acción)</h1>
+
+<div class="row">
+  <span class="stat">Llamada: <b id="selLlamada">—</b></span>
+  <span class="stat">Jugador: <b id="selJugador">—</b></span>
+  <span class="stat">Zona: <b id="selZona">—</b></span>
+  <span class="stat">Valor: <b id="selValor">—</b></span>
+  <span class="stat">Eventos: <b id="countEvents">0</b></span>
+  <button id="resetBtn" class="btn">Reiniciar</button>
+</div>
+
+<div class="grid">
+  <!-- Llamada -->
+  <section>
+    <div class="title">Llamada</div>
+    <div class="box opt-llamada" data-llamada="K7">K7</div>
+    <div class="box opt-llamada" data-llamada="KC">KC</div>
+    <div class="box opt-llamada" data-llamada="K1">K1</div>
+    <div class="box opt-llamada" data-llamada="K2">K2</div>
+    <div class="box opt-llamada" data-llamada="KD">KD</div>
+    <div class="box opt-llamada" data-llamada="KE">KE</div>
+  </section>
+
+  <!-- Jugador -->
+  <section>
+    <div class="title">Jugador</div>
+    <div class="box box-input" title="Escribe y presiona Añadir">
+      <input id="playerInput" placeholder="Ingreso número de jugador"/>
     </div>
-  </div>
+    <div id="addPlayerBtn" class="box box-add" role="button" aria-label="Añadir jugador">Añadir</div>
+    <div id="playersList"></div>
+  </section>
 
-  <main>
-    <!-- Columnas -->
-    <div class="grid">
-      <!-- Jugadores -->
-      <section class="section">
-        <h2>Jugador</h2>
+  <!-- Acción -->
+  <section>
+    <div class="title">Acción</div>
+    <div class="box opt-accion" data-accion="X5">X5</div>
+    <div class="box opt-accion" data-accion="V5">V5</div>
+    <div class="box opt-accion" data-accion="X7">X7</div>
+    <div class="box opt-accion" data-accion="XC">XC</div>
+    <div class="box opt-accion" data-accion="X1">X1</div>
+    <div class="box opt-accion" data-accion="X2">X2</div>
+    <div class="box opt-accion" data-accion="XD">XD</div>
+    <div class="box opt-accion" data-accion="V6">V6</div>
+    <div class="box opt-accion" data-accion="X6">X6</div>
+    <div class="box opt-accion" data-accion="X8">X8</div>
+    <div class="box opt-accion" data-accion="XP">XP</div>
+    <div class="box opt-accion" data-accion="VP">VP</div>
+    <div class="stat" id="actionHint">Selecciona llamada, jugador, zona y valor. Luego haz clic en una acción para registrar.</div>
+  </section>
 
-        <!-- Entrada + botón añadir (amigable para móvil) -->
-        <div class="add-wrap">
-          <div class="box-input" title="Escribe y presiona Añadir">
-            <input id="newPlayerInput" placeholder="Ingreso número de jugador" />
-          </div>
-          <div id="addPlayerBtn" class="box-add" role="button" aria-label="Añadir jugador">Añadir</div>
-        </div>
+  <!-- Zona final -->
+  <section>
+    <div class="title">Zona final</div>
+    <div class="box opt-zona" data-zona="1">1</div>
+    <div class="box opt-zona" data-zona="2">2</div>
+    <div class="box opt-zona" data-zona="3">3</div>
+    <div class="box opt-zona" data-zona="4">4</div>
+    <div class="box opt-zona" data-zona="5">5</div>
+  </section>
 
-        <!-- Lista de jugadores (solo cuadros para selección rápida) -->
-        <div id="playersList"></div>
-      </section>
+  <!-- Valor -->
+  <section>
+    <div class="title">Valor</div>
+    <div class="box opt-valor" data-valor="#">#</div>
+    <div class="box opt-valor" data-valor="+">+</div>
+    <div class="box opt-valor" data-valor="!">!</div>
+    <div class="box opt-valor" data-valor="/">/</div>
+    <div class="box opt-valor" data-valor="-">-</div>
+    <div class="box opt-valor" data-valor="=">=</div>
+  </section>
 
-      <!-- Acciones -->
-      <section class="section">
-        <h2>Acción</h2>
-        <div id="actionsList">
-          <div class="box action" data-action="X5">X5</div>
-          <div class="box action" data-action="V5">V5</div>
-          <div class="box action" data-action="X7">X7</div>
-          <div class="box action" data-action="XC">XC</div>
-          <div class="box action" data-action="X1">X1</div>
-          <div class="box action" data-action="X2">X2</div>
-          <div class="box action" data-action="XD">XD</div>
-          <div class="box action" data-action="V6">V6</div>
-          <div class="box action" data-action="X6">X6</div>
-          <div class="box action" data-action="X8">X8</div>
-          <div class="box action" data-action="XP">XP</div>
-          <div class="box action" data-action="VP">VP</div>
-        </div>
-      </section>
+  <!-- Export -->
+  <section>
+    <div class="title">&nbsp;</div>
+    <div class="box" id="exportCsvBox">Exportar csv</div>
+  </section>
+</div>
 
-      <!-- Columna derecha -->
-      <section class="section right-col">
-        <h2>Opciones</h2>
-        <div class="box" id="exportBox">Exportar csv</div>
-      </section>
-    </div>
-
-    <!-- Tabla de eventos -->
-    <section class="section panel">
-      <h2 style="border-bottom:0;margin-bottom:8px">Eventos</h2>
-      <div style="display:flex;gap:10px;align-items:center;margin:8px 0 12px 0;">
-        <input id="filterPlayer" placeholder="Filtrar por jugador" class="text"/>
-      </div>
-      <div style="overflow:auto;">
-        <table>
-          <thead>
-            <tr><th>#</th><th>Fecha/Hora</th><th>Jugador</th><th>Acción</th><th>Quitar</th></tr>
-          </thead>
-          <tbody id="eventsTbody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Gráfica global -->
-    <section class="section panel">
-      <h2 style="border-bottom:0;margin-bottom:8px">Gráfica de frecuencias global (por acción)</h2>
-      <canvas id="freqChart" height="120" style="margin-top:8px"></canvas>
-    </section>
-
-    <!-- Frecuencias por jugador (abajo) -->
-    <section class="section panel">
-      <h2 style="border-bottom:0;margin-bottom:8px">Frecuencias por jugador</h2>
-      <div id="playersFreqSection" class="freq-grid"></div>
-    </section>
-  </main>
+<!-- Gráfico Llamada ↔ Acción -->
+<div class="panel">
+  <div class="title" style="text-align:left">Frecuencias por Llamada (barras apiladas por Acción)</div>
+  <canvas id="stackedChart" height="160"></canvas>
+</div>
 
 <script>
+  // ---- Estado ----
+  const LLAMADAS = ["K7","KC","K1","K2","KD","KE"];
+  const ACCIONES = ["X5","V5","X7","XC","X1","X2","XD","V6","X6","X8","XP","VP"];
   const state = {
-    currentPlayer: null,
-    players: [],  // [{name}]
-    events: [],   // {ts, player, action}
-    actions: ["X5","V5","X7","XC","X1","X2","XD","V6","X6","X8","XP","VP"],
+    selected: { llamada:null, jugador:null, zona:null, valor:null },
+    players: [],
+    events: [] // {ts, llamada, jugador, accion, zona_final, valor}
   };
 
-  // Elementos
-  const playersList        = document.getElementById("playersList");
-  const newPlayerInput     = document.getElementById("newPlayerInput");
-  const addPlayerBtn       = document.getElementById("addPlayerBtn");
-  const currentPlayerSpan  = document.getElementById("currentPlayer");
-  const totalEventsSpan    = document.getElementById("totalEvents");
-  const eventsTbody        = document.getElementById("eventsTbody");
-  const filterPlayerInput  = document.getElementById("filterPlayer");
-  const exportCsvBtn       = document.getElementById("exportCsvBtn");
-  const exportBox          = document.getElementById("exportBox");
-  const resetBtn           = document.getElementById("resetBtn");
-  const playersFreqSection = document.getElementById("playersFreqSection");
-
-  // Añadir jugador (click botón o Enter)
-  function addPlayer() {
-    const name = newPlayerInput.value.trim();
-    if(!name) return;
-    if(state.players.some(p => p.name === name)) { alert("Ese jugador ya existe."); return; }
-    state.players.push({name});
-    newPlayerInput.value = "";
-    if(!state.currentPlayer) state.currentPlayer = name;
-    renderPlayers(); renderGlobal(); renderPlayerFreqs(); updateChart(); renderTable();
+  // ---- Utilidades UI ----
+  function setActive(selector, key, value){
+    document.querySelectorAll(selector).forEach(el=>{
+      if(el.dataset[key] === value) el.classList.add("active");
+      else el.classList.remove("active");
+    });
   }
-  addPlayerBtn.addEventListener("click", addPlayer);
-  newPlayerInput.addEventListener("keydown", e => { if(e.key === "Enter") addPlayer(); });
+  function refreshBadges(){
+    document.getElementById("selLlamada").textContent = state.selected.llamada || "—";
+    document.getElementById("selJugador").textContent = state.selected.jugador || "—";
+    document.getElementById("selZona").textContent    = state.selected.zona || "—";
+    document.getElementById("selValor").textContent   = state.selected.valor || "—";
+    document.getElementById("countEvents").textContent= state.events.length;
+  }
 
-  // Render: cuadros de jugador
+  // ---- Selecciones ----
+  document.querySelectorAll(".opt-llamada").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      state.selected.llamada = el.dataset.llamada;
+      setActive(".opt-llamada","llamada",state.selected.llamada);
+      refreshBadges();
+    });
+  });
+
+  // Jugadores
+  const playerInput  = document.getElementById("playerInput");
+  const addPlayerBtn = document.getElementById("addPlayerBtn");
+  const playersList  = document.getElementById("playersList");
   function renderPlayers(){
     playersList.innerHTML = "";
-    state.players.forEach(p => {
+    state.players.forEach(name=>{
       const box = document.createElement("div");
-      box.className = "box";
-      box.textContent = p.name;
-      if(state.currentPlayer === p.name) box.classList.add("active");
-      box.addEventListener("click", ()=>{
-        state.currentPlayer = p.name;
-        renderPlayers(); renderGlobal();
-      });
+      box.className="box";
+      box.textContent=name;
+      if(state.selected.jugador===name) box.classList.add("active");
+      box.addEventListener("click", ()=>{ state.selected.jugador=name; renderPlayers(); refreshBadges(); });
       playersList.appendChild(box);
     });
   }
+  function addPlayer(){
+    const name = playerInput.value.trim();
+    if(!name) return;
+    if(state.players.includes(name)) return;
+    state.players.push(name);
+    if(!state.selected.jugador) state.selected.jugador = name;
+    playerInput.value="";
+    renderPlayers(); refreshBadges();
+  }
+  addPlayerBtn.addEventListener("click", addPlayer);
+  playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
 
-  // Registrar acción (Jugador+Acción)
-  document.querySelectorAll(".action").forEach(el=>{
+  // Zona / Valor
+  document.querySelectorAll(".opt-zona").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.selected.zona=el.dataset.zona; setActive(".opt-zona","zona",state.selected.zona); refreshBadges(); });
+  });
+  document.querySelectorAll(".opt-valor").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.selected.valor=el.dataset.valor; setActive(".opt-valor","valor",state.selected.valor); refreshBadges(); });
+  });
+
+  // Registrar con clic en Acción (requiere todos los campos)
+  document.querySelectorAll(".opt-accion").forEach(el=>{
     el.addEventListener("click", ()=>{
-      if(!state.currentPlayer){ alert("Primero añade y selecciona un jugador."); return; }
-      const action = el.dataset.action;
-      const ts = new Date().toISOString();
-      state.events.push({ts, player: state.currentPlayer, action});
-      renderTable(); renderPlayers(); renderGlobal(); updateChart(); renderPlayerFreqs();
+      const falta = [];
+      if(!state.selected.llamada) falta.push("llamada");
+      if(!state.selected.jugador) falta.push("jugador");
+      if(!state.selected.zona)    falta.push("zona");
+      if(!state.selected.valor)   falta.push("valor");
+      if(falta.length){
+        const msg = "Falta: " + falta.join(", ");
+        document.getElementById("actionHint").textContent = msg;
+        setTimeout(()=>{ document.getElementById("actionHint").textContent = "Selecciona llamada, jugador, zona y valor. Luego haz clic en una acción para registrar."; }, 1500);
+        return;
+      }
+      const ev = {
+        ts: new Date().toISOString(),
+        llamada: state.selected.llamada,
+        jugador: state.selected.jugador,
+        accion: el.dataset.accion,
+        zona_final: state.selected.zona,
+        valor: state.selected.valor
+      };
+      state.events.push(ev);
+      refreshBadges();
+      updateStackedChart();
     });
   });
-
-  // Tabla de eventos
-  function renderTable(){
-    const filter = filterPlayerInput.value.trim().toLowerCase();
-    eventsTbody.innerHTML = "";
-    state.events
-      .map((ev,i)=>({...ev, idx:i+1}))
-      .filter(ev => !filter || ev.player.toLowerCase().includes(filter))
-      .forEach(ev=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${ev.idx}</td>
-          <td>${new Date(ev.ts).toLocaleString()}</td>
-          <td>${ev.player}</td>
-          <td><b>${ev.action}</b></td>
-          <td><button class="btn" style="padding:2px 8px" title="Quitar">🗑️</button></td>`;
-        tr.querySelector("button").addEventListener("click", ()=>{
-          const realIndex = ev.idx - 1;
-          state.events.splice(realIndex, 1);
-          renderTable(); renderPlayers(); renderGlobal(); updateChart(); renderPlayerFreqs();
-        });
-        eventsTbody.appendChild(tr);
-      });
-  }
-  filterPlayerInput.addEventListener("input", renderTable);
-
-  // Resumen
-  function renderGlobal(){
-    currentPlayerSpan.textContent = state.currentPlayer || "—";
-    totalEventsSpan.textContent   = state.events.length;
-  }
-
-  // Conteo
-  function countByAction(events){
-    return events.reduce((acc,e)=>{
-      acc[e.action] = (acc[e.action]||0)+1;
-      return acc;
-    },{});
-  }
-
-  // Gráfica global
-  const chart = new Chart(document.getElementById("freqChart").getContext("2d"), {
-    type:"bar",
-    data:{ labels: state.actions, datasets:[{label:"Frecuencia (global)", data: state.actions.map(()=>0)}]},
-    options:{ responsive:true, scales:{ y:{beginAtZero:true, ticks:{precision:0}}}}
-  });
-  function updateChart(){
-    const freqs = countByAction(state.events);
-    chart.data.datasets[0].data = state.actions.map(a=> freqs[a]||0);
-    chart.update();
-  }
-
-  // Frecuencias por jugador (abajo)
-  function renderPlayerFreqs(){
-    playersFreqSection.innerHTML = "";
-    state.players.forEach(p=>{
-      const card = document.createElement("div");
-      card.className = "freq-card";
-      const head = document.createElement("header");
-      const total = state.events.filter(e=>e.player===p.name).length;
-      head.innerHTML = `<span>Jugador ${p.name}</span><span class="badge">${total} evento(s)</span>`;
-      card.appendChild(head);
-
-      const table = document.createElement("table");
-      const thead = document.createElement("thead");
-      thead.innerHTML = "<tr><th>Acción</th><th>Frecuencia</th></tr>";
-      const tbody = document.createElement("tbody");
-
-      const freq = countByAction(state.events.filter(e=>e.player===p.name));
-      state.actions.forEach(a=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${a}</td><td>${freq[a]||0}</td>`;
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(thead); table.appendChild(tbody);
-      card.appendChild(table);
-      playersFreqSection.appendChild(card);
-    });
-  }
 
   // Export CSV
   function exportCSV(){
     if(state.events.length===0){ alert("No hay eventos para exportar."); return; }
-    const header = ["timestamp","jugador","accion"];
-    const rows = state.events.map(e => [e.ts, e.player, e.action]);
+    const header = ["timestamp","llamada","jugador","accion","zona_final","valor"];
+    const rows = state.events.map(e => [e.ts, e.llamada, e.jugador, e.accion, e.zona_final, e.valor]);
     const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href=url; a.download=`volei_eventos_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.csv`;
+    a.href=url; a.download=`volley_events_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.csv`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
-  exportCsvBtn.addEventListener("click", exportCSV);
-  exportBox.addEventListener("click", exportCSV);
+  document.getElementById("exportCsvBox").addEventListener("click", exportCSV);
 
   // Reiniciar
-  resetBtn.addEventListener("click", ()=>{
-    if(!confirm("¿Vaciar todos los eventos y jugadores?")) return;
-    state.currentPlayer = null;
-    state.players = [];
-    state.events = [];
-    renderPlayers(); renderPlayerFreqs(); renderTable(); renderGlobal(); updateChart();
+  document.getElementById("resetBtn").addEventListener("click", ()=>{
+    if(!confirm("¿Vaciar jugadores y eventos?")) return;
+    state.selected = { llamada:null, jugador:null, zona:null, valor:null };
+    state.players = []; state.events = [];
+    document.querySelectorAll(".active").forEach(el=>el.classList.remove("active"));
+    renderPlayers(); refreshBadges(); updateStackedChart();
   });
 
+  // ---- GRÁFICO: Llamada x Acción (barras apiladas) ----
+  const ctx = document.getElementById("stackedChart").getContext("2d");
+  const stacked = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: LLAMADAS,
+      datasets: ACCIONES.map(a => ({ label: a, data: LLAMADAS.map(()=>0) }))
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: "top" } },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  });
+
+  function updateStackedChart(){
+    // matriz conteos [accion][llamada]
+    const counts = {};
+    ACCIONES.forEach(a => counts[a] = LLAMADAS.reduce((o,l)=>(o[l]=0,o),{}));
+    for (const e of state.events){
+      if(counts[e.accion] && counts[e.accion][e.llamada] !== undefined){
+        counts[e.accion][e.llamada] += 1;
+      }
+    }
+    stacked.data.datasets.forEach((ds, idx)=>{
+      const action = ACCIONES[idx];
+      ds.data = LLAMADAS.map(l => counts[action][l]);
+    });
+    stacked.update();
+  }
+
   // Init
-  renderPlayers(); renderPlayerFreqs(); renderTable(); renderGlobal(); updateChart();
+  renderPlayers(); refreshBadges(); updateStackedChart();
 </script>
 </body>
 </html>
