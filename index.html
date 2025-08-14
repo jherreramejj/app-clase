@@ -186,9 +186,12 @@
     });
   });
 
-  // Valor (sin reinicio)
+  // Valor (con reinicio)
   document.querySelectorAll(".opt-valor").forEach(el=>{
     el.addEventListener("click", ()=>{
+      // Reinicio completo antes de seleccionar el valor
+      document.querySelectorAll(".active").forEach(elm => elm.classList.remove("active"));
+      state.selected = { llamada:null, jugador:null, zona:null, valor:null };
       state.selected.valor = el.dataset.valor;
       setActive(".opt-valor","valor",state.selected.valor);
       refreshBadges();
