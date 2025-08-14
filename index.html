@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{
-    --box-w: 110px;    /* tamaño compacto */
     --box-h: 32px;
     --gap: 8px;
     --ink:#111; --paper:#fff; --bg:#fafafa; --accent:#2d6cdf;
@@ -15,17 +14,20 @@
   *{box-sizing:border-box}
   body{margin:0; padding:10px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:#222}
   h1{margin:0 0 8px 0; font-size:16px}
-  /* Layout principal: 5 columnas fijas + 1 flex para export/gráfico */
+
+  /* ===== Grid principal: 5 columnas iguales (alineación perfecta) ===== */
   .grid{
     display:grid; gap:12px; align-items:start;
-    grid-template-columns: repeat(5, var(--box-w)) 1fr;
+    grid-template-columns: repeat(5, 1fr);  /* Llamada | Jugador | Acción | Zona | Valor */
   }
-  @media (max-width:1000px){ .grid{ grid-template-columns: repeat(3, var(--box-w)); } }
-  @media (max-width:700px){ .grid{ grid-template-columns: repeat(2, var(--box-w)); } }
+  @media (max-width:900px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
 
   .title{font-size:14px; margin-bottom:4px; text-align:center}
+  .col{min-width:0} /* permitir que el grid estreche sin romper */
+
+  /* Cuadros tipo maqueta */
   .box{
-    width:var(--box-w); height:var(--box-h);
+    width:100%; height:var(--box-h);
     border:2px solid var(--ink); background:var(--paper);
     display:flex; align-items:center; justify-content:center;
     margin-bottom:var(--gap); cursor:pointer; user-select:none; font-size:12px;
@@ -33,30 +35,25 @@
   }
   .box:hover{background:#f7f7f7}
   .box:active{transform:translateY(1px)}
-  .box.active{outline:3px solid var(--accent); outline-offset:-3px; background:#eef4ff}
+  .box.active{outline:2px solid var(--accent); outline-offset:-2px; background:#eef4ff}
   .box.disabled{opacity:.5; pointer-events:none; filter:grayscale(.3)}
   .box-input{cursor:text; padding:0 6px; justify-content:flex-start}
   .box-input input{width:100%; height:100%; border:none; outline:none; background:transparent; font-size:12px}
   .box-add{font-weight:700}
-  .box--fluid{ width:100%; } /* para que ocupe el ancho de su celda en grids internos */
 
   .row{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px}
   .btn{border:2px solid var(--ink); background:#fff; padding:3px 6px; font-size:11px; cursor:pointer; font-weight:600}
   .stat{font-size:10px; color:#666}
   .panel{border:2px solid var(--ink); background:#fff; padding:8px; margin-top:10px}
+
+  /* Acción: grid interno de 2 columnas (no rompe la alineación principal) */
+  .action-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap);
+  }
+
+  /* Ayuda */
   .hint{font-size:10px; color:#666; text-align:center; min-height:14px}
   .step{font-weight:700}
-
-  /* Acción: cuadrícula de 2 columnas + que ocupe dos columnas del layout en escritorio */
-  .section--action { }
-  @media (min-width: 1001px){
-    .section--action { grid-column: span 2; } /* ocupa dos columnas del layout principal */
-  }
-  .action-grid{
-    display:grid;
-    grid-template-columns: 1fr 1fr; /* 2 columnas internas */
-    gap: var(--gap);
-  }
 </style>
 </head>
 <body>
@@ -71,12 +68,13 @@
   <span class="stat">Zona: <b id="selZona">—</b></span>
   <span class="stat">Valor: <b id="selValor">—</b></span>
   <span class="stat">Eventos: <b id="countEvents">0</b></span>
+  <button id="exportCsvBtn" class="btn">Exportar CSV</button>
   <button id="resetBtn" class="btn">Reiniciar</button>
 </div>
 
 <div class="grid">
   <!-- Llamada -->
-  <section>
+  <section class="col">
     <div class="title">Llamada</div>
     <div class="box opt-llamada" data-llamada="K7">K7</div>
     <div class="box opt-llamada" data-llamada="KC">KC</div>
@@ -87,7 +85,7 @@
   </section>
 
   <!-- Jugador -->
-  <section>
+  <section class="col">
     <div class="title">Jugador</div>
     <div class="box box-input" title="Escribe y presiona Añadir">
       <input id="playerInput" placeholder="Ingreso número de jugador"/>
@@ -97,26 +95,26 @@
   </section>
 
   <!-- Acción (dos columnas internas) -->
-  <section class="section--action">
+  <section class="col">
     <div class="title">Acción</div>
     <div class="action-grid">
-      <div class="box box--fluid opt-accion" data-accion="X5">X5</div>
-      <div class="box box--fluid opt-accion" data-accion="V5">V5</div>
-      <div class="box box--fluid opt-accion" data-accion="X7">X7</div>
-      <div class="box box--fluid opt-accion" data-accion="PP">PP</div>
-      <div class="box box--fluid opt-accion" data-accion="X1">X1</div>
-      <div class="box box--fluid opt-accion" data-accion="X2">X2</div>
-      <div class="box box--fluid opt-accion" data-accion="XD">XD</div>
-      <div class="box box--fluid opt-accion" data-accion="V6">V6</div>
-      <div class="box box--fluid opt-accion" data-accion="X6">X6</div>
-      <div class="box box--fluid opt-accion" data-accion="X8">X8</div>
-      <div class="box box--fluid opt-accion" data-accion="XP">XP</div>
-      <div class="box box--fluid opt-accion" data-accion="VP">VP</div>
+      <div class="box opt-accion" data-accion="X5">X5</div>
+      <div class="box opt-accion" data-accion="V5">V5</div>
+      <div class="box opt-accion" data-accion="X7">X7</div>
+      <div class="box opt-accion" data-accion="PP">PP</div>
+      <div class="box opt-accion" data-accion="X1">X1</div>
+      <div class="box opt-accion" data-accion="X2">X2</div>
+      <div class="box opt-accion" data-accion="XD">XD</div>
+      <div class="box opt-accion" data-accion="V6">V6</div>
+      <div class="box opt-accion" data-accion="X6">X6</div>
+      <div class="box opt-accion" data-accion="X8">X8</div>
+      <div class="box opt-accion" data-accion="XP">XP</div>
+      <div class="box opt-accion" data-accion="VP">VP</div>
     </div>
   </section>
 
   <!-- Zona final -->
-  <section>
+  <section class="col">
     <div class="title">Zona final</div>
     <div class="box opt-zona" data-zona="1">1</div>
     <div class="box opt-zona" data-zona="2">2</div>
@@ -126,8 +124,8 @@
     <div class="box opt-zona" data-zona="6">6</div>
   </section>
 
-  <!-- Valor (al seleccionar se REGISTRA y se REINICIA) -->
-  <section>
+  <!-- Valor (clic = registrar y reiniciar) -->
+  <section class="col">
     <div class="title">Valor</div>
     <div class="box opt-valor" data-valor="#">#</div>
     <div class="box opt-valor" data-valor="+">+</div>
@@ -137,21 +135,16 @@
     <div class="box opt-valor" data-valor="=">=</div>
     <div class="hint" id="actionHint">Orden: Llamada → Jugador → Acción → Zona → <b>Valor</b> (registra)</div>
   </section>
-
-  <!-- Export -->
-  <section>
-    <div class="title">&nbsp;</div>
-    <div class="box" id="exportCsvBox">Exportar csv</div>
-  </section>
 </div>
 
 <!-- Gráfico Llamada ↔ Acción -->
 <div class="panel">
   <div class="title" style="text-align:left">Frecuencias por Llamada (barras apiladas por Acción)</div>
-  <canvas id="stackedChart" height="160"></canvas>
+  <canvas id="stackedChart" height="140"></canvas>
 </div>
 
 <script>
+/* ====== Config ====== */
 const LLAMADAS = ["K7","KC","K1","K2","KD","KE"];
 const ACCIONES = ["X5","V5","X7","PP","X1","X2","XD","V6","X6","X8","XP","VP"];
 const STEPS = [
@@ -161,10 +154,11 @@ const STEPS = [
   { key: "zona",    selector: ".opt-zona",    dataKey: "zona",    label: "Zona"    },
   { key: "valor",   selector: ".opt-valor",   dataKey: "valor",   label: "Valor"   },
 ];
+
 const state = { selected: { llamada:null, jugador:null, accion:null, zona:null, valor:null }, players: [], events: [], progress: 0 };
 
-function $(q){ return document.querySelector(q); }
-function $all(q){ return Array.from(document.querySelectorAll(q)); }
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>Array.from(document.querySelectorAll(q));
 
 function setStepLabel(){ $("#stepLabel").textContent = STEPS[state.progress]?.label ?? "Terminado"; }
 function refreshBadges(){
@@ -180,19 +174,21 @@ function clearAfter(index){
   for(let i=index+1;i<STEPS.length;i++){
     const k = STEPS[i].key;
     state.selected[k] = null;
-    $all(STEPS[i].selector).forEach(el=>el.classList.remove("active"));
+    $$(STEPS[i].selector).forEach(el=>el.classList.remove("active"));
   }
 }
 function enforceDisabled(){
   STEPS.forEach((s, i)=>{
     const disable = i > state.progress;
-    $all(s.selector).forEach(el=>el.classList.toggle("disabled", disable));
+    $$(s.selector).forEach(el=>el.classList.toggle("disabled", disable));
   });
 }
+
+/* Selección con control de orden */
 function handleSelect(stepKey, el){
   const idx = STEPS.findIndex(s=>s.key===stepKey);
   const value = el.dataset[STEPS[idx].dataKey];
-  $all(STEPS[idx].selector).forEach(n=>n.classList.remove("active"));
+  $$(STEPS[idx].selector).forEach(n=>n.classList.remove("active"));
   el.classList.add("active");
   state.selected[stepKey] = value;
   clearAfter(idx);
@@ -201,30 +197,12 @@ function handleSelect(stepKey, el){
     refreshBadges(); enforceDisabled();
   }
 }
-function resetFlow(){
-  Object.keys(state.selected).forEach(k=>state.selected[k]=null);
-  STEPS.forEach(s=>$all(s.selector).forEach(el=>el.classList.remove("active")));
-  state.progress = 0; refreshBadges(); enforceDisabled();
-}
-function registerEvent(){
-  const ev = {
-    ts: new Date().toISOString(),
-    llamada: state.selected.llamada,
-    jugador: state.selected.jugador,
-    accion:  state.selected.accion,
-    zona_final: state.selected.zona,
-    valor: state.selected.valor
-  };
-  state.events.push(ev);
-  refreshBadges(); updateStackedChart(); resetFlow();
-}
 
-/* Handlers por grupo */
-$all(".opt-llamada").forEach(el=>el.addEventListener("click", ()=>handleSelect("llamada", el)));
-/* Acción en 2 columnas: sigue funcionando igual */
-$all(".opt-accion").forEach(el=>el.addEventListener("click", ()=>handleSelect("accion", el)));
-$all(".opt-zona").forEach(el=>el.addEventListener("click", ()=>handleSelect("zona", el)));
-$all(".opt-valor").forEach(el=>el.addEventListener("click", ()=>handleSelect("valor", el)));
+/* Llamada / Acción / Zona / Valor (valor registra) */
+$$(".opt-llamada").forEach(el=> el.addEventListener("click", ()=>handleSelect("llamada", el)));
+$$(".opt-accion").forEach(el=> el.addEventListener("click", ()=>handleSelect("accion", el)));
+$$(".opt-zona").forEach(el=> el.addEventListener("click", ()=>handleSelect("zona", el)));
+$$(".opt-valor").forEach(el=> el.addEventListener("click", ()=>handleSelect("valor", el)));
 
 /* Jugadores dinámicos */
 const playerInput=$("#playerInput"), addPlayerBtn=$("#addPlayerBtn"), playersList=$("#playersList");
@@ -250,6 +228,20 @@ function addPlayer(){
 addPlayerBtn.addEventListener("click", addPlayer);
 playerInput.addEventListener("keydown", e=>{ if(e.key==="Enter") addPlayer(); });
 
+/* Registro */
+function registerEvent(){
+  const ev = {
+    ts: new Date().toISOString(),
+    llamada: state.selected.llamada,
+    jugador: state.selected.jugador,
+    accion:  state.selected.accion,
+    zona_final: state.selected.zona,
+    valor:    state.selected.valor
+  };
+  state.events.push(ev);
+  refreshBadges(); updateStackedChart(); resetFlow();
+}
+
 /* Export CSV */
 function exportCSV(){
   if(state.events.length===0){ alert("No hay eventos."); return; }
@@ -259,9 +251,14 @@ function exportCSV(){
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"}), url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href=url; a.download=`volley_${Date.now()}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
-$("#exportCsvBox").addEventListener("click", exportCSV);
+$("#exportCsvBtn").addEventListener("click", exportCSV);
 
 /* Reset manual */
+function resetFlow(){
+  Object.keys(state.selected).forEach(k=>state.selected[k]=null);
+  STEPS.forEach(s=> $$(s.selector).forEach(el=>el.classList.remove("active")));
+  state.progress = 0; refreshBadges(); enforceDisabled();
+}
 $("#resetBtn").addEventListener("click", ()=>{
   if(!confirm("¿Vaciar jugadores y eventos?")) return;
   state.players=[]; state.events=[]; resetFlow(); renderPlayers(); updateStackedChart();
